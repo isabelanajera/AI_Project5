@@ -51,6 +51,23 @@ class RegressionModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        # paramaters
+        self.hidden_size = 512
+        self.learning_rate = 0.05
+        self.batch_size = 200
+
+        # weights with correct shapes
+        # layer 1 weight = input_size x hidden_size (1x512)
+        self.w1 = nn.Parameter(1, self.hidden_size)
+        # layer 1 biases = hidden_size (512)
+        self.b1 = nn.Parameter(1, self.hidden_size)
+        
+        # layer 2 weights = hidden_size x output_size (512x1)
+        self.w2 = nn.Parameter(self.hidden_size, 1)
+        # layer 2 biases = output_size
+        self.b2 = nn.Parameter(1, 1)
+        
+        self.params = [self.w1, self.b1, self.w2, self.b2]
 
     def run(self, x):
         """
@@ -62,6 +79,11 @@ class RegressionModel(object):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         "*** YOUR CODE HERE ***"
+        # first layer = x * w1
+        hidden = nn.ReLU(nn.AddBias(nn.Linear(x, self.w1), self.b1))
+        # output layer = hidden * w2
+        out = nn.AddBias(nn.Linear(hidden, self.w2), self.b2)
+        return out
 
     def get_loss(self, x, y):
         """
@@ -74,12 +96,34 @@ class RegressionModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        # use self.run to get prediction
+        prediction = self.run(x)
+        # (1/N) * sum((prediction - y)^2)
+        return nn.SquareLoss(prediction, y)
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        # until target loss
+        while True:
+            # iterate through dataset in batches
+            for x_batch, y_batch in dataset.iterate_once(self.batch_size):
+                # loss for current batch
+                current = self.get_loss(x_batch, y_batch)
+                # conversion
+                loss = nn.as_scalar(current)
+                
+                # if target loss reached stop training
+                if loss <= 0.02:
+                    return
+                # gradients of loss with respect to paramaters
+                grads = nn.gradients(current, self.params)
+                # update param = param - learning rate * grad
+                for param, grad in zip(self.params, grads):
+                    param.update(grad, -self.learning_rate)
+
 
 class DigitClassificationModel(object):
     """
@@ -135,6 +179,7 @@ class DigitClassificationModel(object):
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+
 
 class LanguageIDModel(object):
     """
